@@ -6,55 +6,61 @@
 #include "MyNPC.h"
 #include "Kismet/GameplayStatics.h"
 
-void AFlaskCommunicator::SendRequest(const FString& InputText) {
-    // HTTP ¿äÃ» »ý¼º
+void AFlaskCommunicator::SendRequest(const FString &InputText)
+{
+    // HTTP ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
 
-    FString ServerUrl = TEXT("203.234.55.134:8900/chat");
+    FString ServerUrl = TEXT("localhost/chat");
 
     Request->SetURL(ServerUrl);
     Request->SetVerb(TEXT("POST"));
     Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
-    // JSON °´Ã¼ »ý¼º
+    // JSON ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
     TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
     JsonObject->SetStringField(TEXT("message"), InputText);
 
-    // JSONÀ» ¹®ÀÚ¿­·Î Á÷·ÄÈ­
+    // JSONï¿½ï¿½ ï¿½ï¿½ï¿½Ú¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½È­
     FString RequestContent;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestContent);
     FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
 
     Request->SetContentAsString(RequestContent);
 
-    // ÀÀ´ä Ã³¸® ÄÝ¹é ¼³Á¤
+    // ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ ï¿½Ý¹ï¿½ ï¿½ï¿½ï¿½ï¿½
     Request->OnProcessRequestComplete().BindUObject(this, &AFlaskCommunicator::OnResponseReceived);
 
-    // ¿äÃ» ½ÇÇà
+    // ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½
     Request->ProcessRequest();
 }
 
-void AFlaskCommunicator::OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
-    if (bWasSuccessful && Response.IsValid()) {
+void AFlaskCommunicator::OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+    if (bWasSuccessful && Response.IsValid())
+    {
         FString ResponseContent = Response->GetContentAsString();
 
         TSharedPtr<FJsonObject> JsonResponse;
         TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
 
-        if (FJsonSerializer::Deserialize(Reader, JsonResponse)) {
+        if (FJsonSerializer::Deserialize(Reader, JsonResponse))
+        {
             FString ResponseMessage = JsonResponse->GetStringField(TEXT("response"));
 
-            // ÀÀ´ä ¸Þ½ÃÁö¸¦ NPC¿¡ Àü´Þ
-            AMyNPC* NPC = Cast<AMyNPC>(UGameplayStatics::GetActorOfClass(GetWorld(), AMyNPC::StaticClass()));
-            if (NPC) {
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½Þ½ï¿½ï¿½ï¿½ï¿½ï¿½ NPCï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+            AMyNPC *NPC = Cast<AMyNPC>(UGameplayStatics::GetActorOfClass(GetWorld(), AMyNPC::StaticClass()));
+            if (NPC)
+            {
                 NPC->UpdateText(ResponseMessage);
             }
 
-            // ·Î±×¿¡µµ Ãâ·Â
+            // ï¿½Î±×¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
             UE_LOG(LogTemp, Log, TEXT("Response: %s"), *ResponseMessage);
         }
     }
-    else {
+    else
+    {
         UE_LOG(LogTemp, Error, TEXT("HTTP request failed"));
     }
 }
